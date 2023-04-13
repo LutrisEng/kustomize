@@ -75,7 +75,7 @@ $(MYGOBIN)/pluginator:
 # Build from local source.
 $(MYGOBIN)/kustomize: build-kustomize-api
 	cd kustomize; \
-	go install -ldflags "-X sigs.k8s.io/kustomize/api/provenance.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+	go install -ldflags "-X sigs.k8s.io/kustomize/api/provenance.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ') -X sigs.k8s.io/kustomize/api/provenance.version=5.0.1" \
 	.
 
 kustomize: $(MYGOBIN)/kustomize
@@ -180,8 +180,19 @@ clean: clean-kustomize-external-go-plugin uninstall-tools
 	go clean --cache
 	rm -f $(builtinplugins)
 	rm -f $(MYGOBIN)/kustomize
+	rm -f kustomize.deb
 
 # Nuke the site from orbit.  It's the only way to be sure.
 .PHONY: nuke
 nuke: clean
 	go clean --modcache
+
+kustomize.deb: $(MYGOBIN)/kustomize
+	fpm \
+		-s dir -t deb -f \
+		-p kustomize.deb \
+		--name kustomize \
+		--license apache-2.0 \
+		--version 5.0.1 \
+		--architecture amd64 \
+		$(MYGOBIN)/kustomize=/usr/bin/kustomize
